@@ -13,12 +13,15 @@ http://localhost:5174/
 
 Sheet di-proxy lewat `/gexport` (Vite lokal, Cloudflare Functions di hosting).
 
-## Hosting Cloudflare Pages (gratis)
+## Hosting Cloudflare (gratis)
 
-1. Repo GitHub publik
-2. [dash.cloudflare.com](https://dash.cloudflare.com) → **Sign in with GitHub** (gratis, tanpa kartu)
-3. **Workers & Pages** → **Create** → **Pages** → Connect repository `run-gpi`
-4. Build: `npm run build` · Output: `dist` · Node: `22`
+Project ini disambung sebagai **Worker** `run-gpi` (bukan Pages).
 
-Setelah itu link tetap, contoh: `https://run-gpi.pages.dev`
+Di Cloudflare → Settings → Build:
+
+- **Build command:** `npm run build`
+- **Deploy command:** `npx wrangler deploy`
+- **Root directory:** `/`
+
+Setelah sukses, URL biasanya `https://run-gpi.<akun>.workers.dev`
 
