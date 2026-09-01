@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import type { Plan, SessionKey } from './plan'
+import { weekdayFromText, type Plan, type SessionKey } from './plan'
 
 export type Report = {
   at: Date | null
@@ -36,13 +36,7 @@ function parseEuDate(value: string): Date | null {
 }
 
 function sessionKeyFromLabel(label: string): SessionKey | 'lain' {
-  const s = label.toLowerCase()
-  if (s.startsWith('selasa')) return 'selasa'
-  if (s.startsWith('rabu')) return 'rabu'
-  if (s.startsWith('kamis')) return 'kamis'
-  if (s.startsWith('sabtu')) return 'sabtu'
-  if (s.startsWith('minggu')) return 'minggu'
-  return 'lain'
+  return weekdayFromText(label)
 }
 
 function sameDay(a: Date | null, b: Date | null) {
@@ -93,6 +87,7 @@ export function parseKm(value: string) {
 
 export function mergePlanWithReports(plan: Plan, reports: Report[]) {
   const unmatched: Report[] = []
+  const duplicates: Report[] = []
   const weeks = plan.weeks.map((week) => ({
     ...week,
     sessions: week.sessions.map((session) => ({ ...session })),
@@ -118,6 +113,8 @@ export function mergePlanWithReports(plan: Plan, reports: Report[]) {
           hr: report.hr,
           note: report.note,
         }
+      } else {
+        duplicates.push(report)
       }
       break
     }
@@ -127,6 +124,7 @@ export function mergePlanWithReports(plan: Plan, reports: Report[]) {
   return {
     plan: { ...plan, weeks },
     unmatched,
-    matchedCount: reports.length - unmatched.length,
+    duplicates,
+    matchedCount: reports.length - unmatched.length - duplicates.length,
   }
 }

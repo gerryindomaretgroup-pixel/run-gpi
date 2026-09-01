@@ -33,42 +33,6 @@ export function watchRunGps(
   return () => navigator.geolocation.clearWatch(id)
 }
 
-/** Oval sekitar GBK — untuk desktop/Codespaces yang tidak punya GPS. */
-const DEMO: [number, number][] = [
-  [-6.2184, 106.8028],
-  [-6.2189, 106.8036],
-  [-6.2196, 106.8040],
-  [-6.2203, 106.8036],
-  [-6.2208, 106.8028],
-  [-6.2203, 106.8020],
-  [-6.2196, 106.8016],
-  [-6.2189, 106.8020],
-]
-
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t
-}
-
-export function startSimulatedGps(onPoint: (p: GpsPoint) => void) {
-  let step = 0
-  const tick = () => {
-    const i = Math.floor(step / 3)
-    const t = (step % 3) / 3
-    const a = DEMO[i % DEMO.length]
-    const b = DEMO[(i + 1) % DEMO.length]
-    onPoint({
-      lat: lerp(a[0], b[0], t),
-      lng: lerp(a[1], b[1], t),
-      at: Date.now(),
-      accuracy: 8,
-    })
-    step += 1
-  }
-  tick()
-  const id = window.setInterval(tick, 400)
-  return () => window.clearInterval(id)
-}
-
 export function shouldKeepPoint(prev: GpsPoint | undefined, next: GpsPoint) {
   if (!prev) return true
   return haversineKm(prev, next) >= MIN_STEP_KM

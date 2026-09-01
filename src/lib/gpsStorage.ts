@@ -17,7 +17,8 @@ export function loadGpsRuns(): GpsRun[] {
     const raw = localStorage.getItem(KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw) as GpsRun[]
-    return Array.isArray(parsed) ? parsed : []
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((r) => r.source !== 'simulasi')
   } catch {
     return []
   }

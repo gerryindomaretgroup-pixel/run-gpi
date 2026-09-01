@@ -18,7 +18,7 @@ Dashboard jadwal Full Marathon GPI. Laporan dari Google Form TARGET GPI.
 Dua input terpisah:
 
 - Google Form → sheet jawaban (pacuan jadwal)
-- GPS / simulasi → `localStorage` di perangkat, tidak masuk form
+- GPS HP → `localStorage` di perangkat, tidak masuk form
 
 Hosting produksi: Cloudflare Pages (`run-gpi`). Sheet lewat Function `/gexport`.
 

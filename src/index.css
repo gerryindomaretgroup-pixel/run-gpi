@@ -434,6 +434,14 @@ body {
   margin-top: 0.7rem;
 }
 
+.gps-metrics.three {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.gps-metrics.three strong {
+  font-size: 1.05rem;
+}
+
 .gps-metrics div {
   background: #0f172a;
   border: 1px solid #1e293b;
@@ -523,7 +531,7 @@ body {
   border-top: 1px solid #1e293b;
   display: flex;
   justify-content: space-between;
-  padding: 0.85rem 2rem;
+  padding: 0.75rem 0.7rem;
   z-index: 10;
   border-radius: 1rem 1rem 0 0;
 }
@@ -555,4 +563,146 @@ body {
   font-size: 0.85rem;
   font-style: italic;
   padding: 1rem 0;
+}
+
+.btn.ghost:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.sheet-bar .sheet-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.sync-line {
+  margin: 0.55rem 0 0;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+.faq {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 1rem;
+  padding: 0.85rem 1rem 1rem;
+}
+
+.faq summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #d1d5db;
+  list-style-position: outside;
+}
+
+.faq h4 {
+  margin: 0.85rem 0 0.3rem;
+  font-size: 0.75rem;
+  color: #10b981;
+}
+
+.faq p {
+  margin: 0 0 0.4rem;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.faq a {
+  color: #34d399;
+}
+
+.faq em {
+  font-style: italic;
+  color: #d1d5db;
+  font-size: inherit;
+}
+
+.rekap-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.rekap-tile {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 0.85rem;
+  padding: 0.7rem 0.75rem;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.rekap-tile.on {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.rekap-tile span {
+  display: block;
+  font-size: 0.65rem;
+  color: #9ca3af;
+}
+
+.rekap-tile strong {
+  display: block;
+  font-size: 1.25rem;
+  margin-top: 0.1rem;
+}
+
+.rekap-tile em {
+  display: block;
+  font-style: normal;
+  font-size: 0.65rem;
+  color: #64748b;
+  margin-top: 0.1rem;
+}
+
+.rekap-hero {
+  text-align: center;
+  margin: 0.4rem 0 0.8rem;
+}
+
+.rekap-hero p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.rekap-hero strong {
+  display: block;
+  font-size: 2.2rem;
+  line-height: 1.1;
+  margin: 0.15rem 0 0.35rem;
+}
+
+.rekap-hero strong span {
+  font-size: 0.9rem;
+  color: #10b981;
+}
+
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.delta.up {
+  color: #6ee7b7;
+}
+
+.delta.down {
+  color: #fda4af;
+}
+
+.delta.flat {
+  color: #94a3b8;
 }

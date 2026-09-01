@@ -9,8 +9,6 @@ import {
   PointElement,
   Tooltip,
 } from 'chart.js'
-import { formatDay } from '../lib/plan'
-import { parseKm, type Report } from '../lib/reports'
 
 Chart.register(
   LineController,
@@ -22,7 +20,7 @@ Chart.register(
   Tooltip,
 )
 
-export function DistanceChart({ reports }: { reports: Report[] }) {
+export function TrendChart({ labels, values }: { labels: string[]; values: number[] }) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -31,9 +29,6 @@ export function DistanceChart({ reports }: { reports: Report[] }) {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const recent = [...reports].reverse().slice(-8)
-    const labels = recent.map((r) => formatDay(r.date))
-    const points = recent.map((r) => parseKm(r.distance))
     const gradient = ctx.createLinearGradient(0, 0, 0, 180)
     gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)')
     gradient.addColorStop(1, 'rgba(16, 185, 129, 0)')
@@ -45,7 +40,7 @@ export function DistanceChart({ reports }: { reports: Report[] }) {
         datasets: [
           {
             label: 'Jarak (km)',
-            data: points.length ? points : [0],
+            data: values.length ? values : [0],
             borderColor: '#10b981',
             backgroundColor: gradient,
             borderWidth: 2.5,
@@ -69,14 +64,14 @@ export function DistanceChart({ reports }: { reports: Report[] }) {
             bodyColor: '#10b981',
             displayColors: false,
             callbacks: {
-              label: (item) => `${item.parsed.y} km`,
+              label: (item) => `${Number(item.parsed.y).toFixed(1)} km`,
             },
           },
         },
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: '#64748b', font: { size: 10 } },
+            ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 0, autoSkip: true },
           },
           y: {
             beginAtZero: true,
@@ -88,7 +83,7 @@ export function DistanceChart({ reports }: { reports: Report[] }) {
     })
 
     return () => chart.destroy()
-  }, [reports])
+  }, [labels, values])
 
   return <canvas ref={ref} />
 }

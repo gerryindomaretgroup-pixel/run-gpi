@@ -4,7 +4,7 @@ export default {
     if (url.pathname.startsWith('/gexport/')) {
       const path = url.pathname.replace(/^\/gexport/, '')
       const target = `https://docs.google.com${path}${url.search}`
-      const res = await fetch(target, { redirect: 'follow' })
+      const res = await fetch(target, { redirect: 'follow', cache: 'no-store' })
       return new Response(res.body, {
         status: res.status,
         headers: {

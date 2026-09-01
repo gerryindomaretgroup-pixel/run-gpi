@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Navigation, Pause, Play, Square } from 'lucide-react'
+import { Pause, Play, Square } from 'lucide-react'
 import { formatDuration, formatPace, paceMinPerKm, pathDistanceKm, type GpsPoint } from '../lib/geo'
-import { shouldKeepPoint, startSimulatedGps, watchRunGps } from '../lib/gps'
+import { shouldKeepPoint, watchRunGps } from '../lib/gps'
 import type { GpsRun } from '../lib/gpsStorage'
 
 export function GpsTrack({ onSave }: { onSave: (run: GpsRun) => void }) {
   const [active, setActive] = useState(false)
   const [paused, setPaused] = useState(false)
-  const [mode, setMode] = useState<'gps' | 'simulasi'>('gps')
   const [points, setPoints] = useState<GpsPoint[]>([])
   const [error, setError] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
@@ -37,23 +36,26 @@ export function GpsTrack({ onSave }: { onSave: (run: GpsRun) => void }) {
     stopWatch.current = null
   }
 
-  function start(nextMode: 'gps' | 'simulasi') {
+  function attachWatch() {
+    const onPoint = (p: GpsPoint) => {
+      setPoints((prev) => (shouldKeepPoint(prev[prev.length - 1], p) ? [...prev, p] : prev))
+    }
+    stopWatch.current = watchRunGps(onPoint, (message) => {
+      setError(`${message} Kalau GPS tidak aktif, isi laporan lewat Google Form.`)
+    })
+  }
+
+  function start() {
     clearWatch()
-    setMode(nextMode)
     setError(null)
     setPoints([])
     setPaused(false)
     setPausedMs(0)
     pauseStarted.current = null
-    const t = Date.now()
-    setStartedAt(t)
+    setStartedAt(Date.now())
     setElapsedMs(0)
     setActive(true)
-    const onPoint = (p: GpsPoint) => {
-      setPoints((prev) => (shouldKeepPoint(prev[prev.length - 1], p) ? [...prev, p] : prev))
-    }
-    stopWatch.current =
-      nextMode === 'simulasi' ? startSimulatedGps(onPoint) : watchRunGps(onPoint, setError)
+    attachWatch()
   }
 
   function togglePause() {
@@ -69,11 +71,7 @@ export function GpsTrack({ onSave }: { onSave: (run: GpsRun) => void }) {
       }
       pauseStarted.current = null
       setPaused(false)
-      const onPoint = (p: GpsPoint) => {
-        setPoints((prev) => (shouldKeepPoint(prev[prev.length - 1], p) ? [...prev, p] : prev))
-      }
-      stopWatch.current =
-        mode === 'simulasi' ? startSimulatedGps(onPoint) : watchRunGps(onPoint, setError)
+      attachWatch()
     }
   }
 
@@ -89,10 +87,10 @@ export function GpsTrack({ onSave }: { onSave: (run: GpsRun) => void }) {
         distanceKm,
         durationMs: duration,
         points,
-        source: mode,
+        source: 'gps',
       })
     } else {
-      setError('Jarak terlalu pendek untuk disimpan. Lanjut dulu, atau pakai simulasi.')
+      setError('Jarak terlalu pendek untuk disimpan. Lanjut lari, atau isi lewat Google Form.')
     }
     setActive(false)
     setPaused(false)
@@ -106,36 +104,19 @@ export function GpsTrack({ onSave }: { onSave: (run: GpsRun) => void }) {
 
   return (
     <div className="gps">
-      <div className="tabs">
-        <button
-          type="button"
-          className={mode === 'gps' ? 'on' : undefined}
-          onClick={() => !active && setMode('gps')}
-        >
-          <Navigation size={14} /> GPS HP
-        </button>
-        <button
-          type="button"
-          className={mode === 'simulasi' ? 'on' : undefined}
-          onClick={() => !active && setMode('simulasi')}
-        >
-          Simulasi
-        </button>
-      </div>
-
       <div className="gps-status">
         <span>
           <i className={active ? (paused ? 'dot amber' : 'dot live') : 'dot'} />
-          {active ? (paused ? 'Dijeda' : mode === 'simulasi' ? 'Simulasi rute GBK' : 'Merekam GPS') : 'Siap'}
+          {active ? (paused ? 'Dijeda' : 'Merekam GPS') : 'Siap'}
         </span>
         <span>
           {last?.accuracy != null ? `Presisi ±${Math.round(last.accuracy)} m` : 'Presisi: —'}
         </span>
       </div>
 
-      <div className="gps-metrics">
+      <div className="gps-metrics three">
         <div>
-          <p>Jarak live</p>
+          <p>Jarak</p>
           <strong>
             {distanceKm.toFixed(2)} <span>KM</span>
           </strong>
@@ -144,15 +125,20 @@ export function GpsTrack({ onSave }: { onSave: (run: GpsRun) => void }) {
           <p>Waktu</p>
           <strong>{formatDuration(liveMs)}</strong>
         </div>
+        <div>
+          <p>Pace</p>
+          <strong>
+            {formatPace(paceMinPerKm(distanceKm, liveMs))} <span>/km</span>
+          </strong>
+        </div>
       </div>
-      <p className="meta gps-pace">Pace {formatPace(paceMinPerKm(distanceKm, liveMs))} /km</p>
 
       {error && <p className="gps-alert">{error}</p>}
 
       <div className="gps-actions">
         {!active && (
-          <button type="button" className="btn accent" onClick={() => start(mode)}>
-            <Play size={16} /> {mode === 'simulasi' ? 'Mulai simulasi' : 'Mulai lari'}
+          <button type="button" className="btn accent" onClick={start}>
+            <Play size={16} /> Mulai lari
           </button>
         )}
         {active && (
@@ -167,8 +153,8 @@ export function GpsTrack({ onSave }: { onSave: (run: GpsRun) => void }) {
         )}
       </div>
       <p className="meta">
-        GPS sungguhan: HP + izin lokasi (luar ruangan ±5–20 m). Codespaces/laptop: pakai Simulasi.
-        Sesi GPS tersimpan di HP ini, terpisah dari Google Form.
+        Pakai HP di luar ruangan dan izinkan lokasi. GPS tersimpan di HP ini saja (bukan form).
+        Lupa aktifkan GPS atau lari di laptop? Isi jarak & pace lewat Google Form.
       </p>
     </div>
   )
