@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RunTrack Dashboard - GPS & AI Coach</title>
+    <!-- Tailwind CSS untuk Styling Cepat dan Responsif -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js untuk Grafik Interaktif -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        sport: {
+                            dark: '#0f172a',
+                            card: '#1e293b',
+                            accent: '#10b981', // Emerald 500
+                            accentHover: '#059669',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Sembunyikan scrollbar untuk tampilan mobile yang lebih bersih */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        body {
+            background-color: #000; /* Latar belakang luar hitam */
+        }
+        .mobile-container {
+            /* Simulasi layar HP di desktop, full width di HP sesungguhnya */
+            max-width: 420px; 
+            margin: 0 auto;
+            background-color: #0f172a;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.1);
+        }
+    </style>
+</head>
+<body class="text-white antialiased">
+
+    <div class="mobile-container pb-20">
+        <!-- Header Section -->
+        <header class="p-6 pt-10 flex justify-between items-center">
+            <div>
+                <p class="text-gray-400 text-sm">Selamat Pagi,</p>
+                <h1 class="text-2xl font-bold text-white tracking-wide">Pelari Hebat <i data-lucide="flame" class="inline text-sport-accent w-6 h-6 mb-1"></i></h1>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-sport-card flex items-center justify-center border-2 border-sport-accent">
+                <i data-lucide="user" class="text-sport-accent"></i>
+            </div>
+        </header>
+
+        <!-- Main Stats (Resume) -->
+        <section class="px-6 mb-6">
+            <div class="bg-gradient-to-br from-sport-card to-slate-800 rounded-3xl p-6 shadow-lg relative overflow-hidden border border-slate-700/50">
+                <!-- Ornamen Dekoratif -->
+                <div class="absolute -right-6 -top-6 w-24 h-24 bg-sport-accent rounded-full opacity-10 blur-2xl"></div>
+                
+                <h2 class="text-gray-400 text-sm font-medium mb-1">Total Jarak Lari</h2>
+                <div class="flex items-end gap-2">
+                    <span id="totalDistance" class="text-5xl font-bold text-white">0.0</span>
+                    <span class="text-sport-accent font-semibold mb-1">KM</span>
+                </div>
+                
+                <div class="flex mt-6 gap-4">
+                    <div>
+                        <p class="text-xs text-gray-400">Total Lari</p>
+                        <p id="totalRuns" class="font-semibold text-lg">0 <span class="text-xs font-normal">kali</span></p>
+                    </div>
+                    <div class="w-px bg-gray-600"></div>
+                    <div>
+                        <p class="text-xs text-gray-400">Rata-rata</p>
+                        <p id="avgDistance" class="font-semibold text-lg">0.0 <span class="text-xs font-normal">km/lari</span></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Input / GPS Section -->
+        <section class="px-6 mb-6">
+            <div class="bg-sport-card rounded-2xl p-5 border border-slate-700 shadow-md">
+                <!-- Tab Selector -->
+                <div class="flex bg-slate-900 rounded-xl p-1 mb-4 border border-slate-800">
+                    <button id="tabGps" onclick="switchMode('gps')" class="flex-1 py-2 text-xs font-semibold rounded-lg bg-sport-accent text-slate-900 transition-all flex items-center justify-center gap-1.5 shadow">
+                        <i data-lucide="navigation" class="w-3.5 h-3.5"></i> Pelacak GPS (Live)
+                    </button>
+                    <button id="tabManual" onclick="switchMode('manual')" class="flex-1 py-2 text-xs font-semibold rounded-lg text-gray-400 hover:text-white transition-all flex items-center justify-center gap-1.5">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Input Manual
+                    </button>
+                </div>
+
+                <!-- GPS Tracker Panel -->
+                <div id="gpsPanel" class="space-y-4">
+                    <!-- GPS Status Badge -->
+                    <div class="flex justify-between items-center text-xs text-gray-400 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+                        <span class="flex items-center gap-2">
+                            <span id="gpsPulse" class="w-2.5 h-2.5 rounded-full bg-gray-500"></span>
+                            <span id="gpsStatusText">GPS Standby</span>
+                        </span>
+                        <span id="gpsAccuracyText" class="text-[10px] text-gray-500">Presisi: -</span>
+                    </div>
+
+                    <!-- Live Metrics Display -->
+                    <div class="grid grid-cols-2 gap-3 text-center py-1">
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                            <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Jarak Live</p>
+                            <p class="text-2xl font-bold text-sport-accent"><span id="liveGpsDistance">0.00</span> <span class="text-xs text-white">KM</span></p>
+                        </div>
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                            <p class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Waktu Tempuh</p>
+                            <p id="liveGpsTimer" class="text-2xl font-bold text-white">00:00</p>
+                        </div>
+                    </div>
+
+                    <!-- GPS Notification / Alert Box -->
+                    <div id="gpsAlert" class="hidden text-xs bg-amber-500/10 border border-amber-500/30 text-amber-300 p-3 rounded-xl"></div>
+
+                    <!-- Action Control Buttons -->
+                    <div class="flex gap-2">
+                        <button id="btnStartGps" onclick="startGpsRun()" class="flex-1 bg-sport-accent hover:bg-sport-accentHover text-slate-900 font-bold py-3 rounded-xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center justify-center gap-2">
+                            <i data-lucide="play" class="w-4 h-4 fill-current"></i> Mulai Lari
+                        </button>
+                        <button id="btnPauseGps" onclick="pauseGpsRun()" class="hidden flex-1 bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="pause" class="w-4 h-4 fill-current"></i> Jeda
+                        </button>
+                        <button id="btnStopGps" onclick="stopGpsRun()" class="hidden bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="square" class="w-4 h-4 fill-current"></i> Simpan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Manual Form Panel (Hidden by default) -->
+                <form id="runForm" class="hidden flex gap-3">
+                    <div class="relative flex-1">
+                        <input type="number" id="distanceInput" step="0.01" min="0.1" required
+                            class="w-full bg-slate-900 border border-slate-600 rounded-xl py-3 px-4 text-white placeholder-gray-500 focus:outline-none focus:border-sport-accent focus:ring-1 focus:ring-sport-accent transition-all text-sm"
+                            placeholder="Jarak (mis: 5.2)">
+                        <span class="absolute right-4 top-3 text-gray-500 text-sm font-medium">KM</span>
+                    </div>
+                    <button type="submit" 
+                        class="bg-sport-accent hover:bg-sport-accentHover text-slate-900 font-bold py-3 px-5 rounded-xl transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)] text-sm">
+                        Simpan
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Menu & Program Latihan (History-Based) -->
+        <section class="px-6 mb-6">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-sm font-semibold text-gray-300 flex items-center gap-2">
+                    <i data-lucide="target" class="w-4 h-4 text-sport-accent"></i> Rekomendasi Menu Latihan
+                </h3>
+                <button onclick="generateAiPlan()" class="text-xs text-sport-accent bg-sport-accent/10 border border-sport-accent/30 px-2.5 py-1 rounded-lg hover:bg-sport-accent/20 transition flex items-center gap-1 font-medium">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> AI Coach
+                </button>
+            </div>
+
+            <!-- Dynamic Training Cards Container -->
+            <div id="trainingMenuContainer" class="grid grid-cols-1 gap-2.5">
+                <!-- Diisi otomatis berdasarkan analisis riwayat lari -->
+            </div>
+
+            <!-- AI Coach Recommendation Box -->
+            <div id="aiPlanBox" class="hidden mt-3 p-4 bg-slate-900/95 border border-emerald-500/40 rounded-2xl relative shadow-xl backdrop-blur">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-sport-accent flex items-center gap-1.5">
+                        <i data-lucide="bot" class="w-4 h-4"></i> Program Latihan AI Coach
+                    </span>
+                    <button onclick="document.getElementById('aiPlanBox').classList.add('hidden')" class="text-gray-400 hover:text-white text-xs">✕</button>
+                </div>
+                <div id="aiPlanContent" class="text-xs text-gray-300 space-y-2 leading-relaxed">
+                    <p class="animate-pulse text-emerald-400">Menganalisis riwayat lari Anda...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chart Section -->
+        <section class="px-6 mb-6">
+            <h3 class="text-sm font-semibold mb-3 text-gray-300">Grafik Performa</h3>
+            <div class="bg-sport-card rounded-2xl p-4 border border-slate-700 h-48 w-full">
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </section>
+
+        <!-- History Section -->
+        <section class="px-6 mb-6">
+            <h3 class="text-sm font-semibold mb-3 text-gray-300">Riwayat Terakhir</h3>
+            <div id="historyList" class="flex flex-col gap-3">
+                <!-- Daftar riwayat disuntikkan oleh JavaScript -->
+            </div>
+        </section>
+
+        <!-- Bottom Nav Bar -->
+        <nav class="fixed bottom-0 w-full max-w-[420px] bg-slate-900/90 backdrop-blur-md border-t border-slate-800 p-4 px-8 flex justify-between z-10 rounded-t-2xl">
+            <a href="#" class="text-sport-accent flex flex-col items-center gap-1">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span class="text-[10px] font-semibold">Home</span>
+            </a>
+            <a href="#" class="text-gray-500 hover:text-gray-300 transition flex flex-col items-center gap-1">
+                <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Statistik</span>
+            </a>
+            <a href="#" class="text-gray-500 hover:text-gray-300 transition flex flex-col items-center gap-1">
+                <i data-lucide="trophy" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Piala</span>
+            </a>
+            <a href="#" class="text-gray-500 hover:text-gray-300 transition flex flex-col items-center gap-1">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Profil</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // Inisialisasi Lucide Icons
+        lucide.createIcons();
+
+        // Data Lari Awal (State Management)
+        let runData = [
+            { id: 1, distance: 3.2, date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
+            { id: 2, distance: 5.0, date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
+        ];
+
+        let chartInstance = null;
+
+        // GPS Tracker State Variables
+        let watchId = null;
+        let lastLat = null;
+        let lastLon = null;
+        let gpsDistance = 0.0; // Dalam kilometer
+        let gpsSeconds = 0;
+        let gpsTimerInterval = null;
+        let isGpsActive = false;
+        let isGpsPaused = false;
+
+        // Formula Haversine untuk kalkulasi jarak presisi antara 2 koordinat bumi
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Jari-jari bumi dalam KM
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; // Hasil dalam KM
+        }
+
+        // Switch Mode antara GPS & Input Manual
+        function switchMode(mode) {
+            const gpsPanel = document.getElementById('gpsPanel');
+            const runForm = document.getElementById('runForm');
+            const tabGps = document.getElementById('tabGps');
+            const tabManual = document.getElementById('tabManual');
+
+            if (mode === 'gps') {
+                gpsPanel.classList.remove('hidden');
+                runForm.classList.add('hidden');
+                tabGps.className = "flex-1 py-2 text-xs font-semibold rounded-lg bg-sport-accent text-slate-900 transition-all flex items-center justify-center gap-1.5 shadow";
+                tabManual.className = "flex-1 py-2 text-xs font-semibold rounded-lg text-gray-400 hover:text-white transition-all flex items-center justify-center gap-1.5";
+            } else {
+                gpsPanel.classList.add('hidden');
+                runForm.classList.remove('hidden');
+                tabManual.className = "flex-1 py-2 text-xs font-semibold rounded-lg bg-sport-accent text-slate-900 transition-all flex items-center justify-center gap-1.5 shadow";
+                tabGps.className = "flex-1 py-2 text-xs font-semibold rounded-lg text-gray-400 hover:text-white transition-all flex items-center justify-center gap-1.5";
+            }
+        }
+
+        // Control Timer Stopwatch
+        function startTimer() {
+            gpsTimerInterval = setInterval(() => {
+                gpsSeconds++;
+                const mins = Math.floor(gpsSeconds / 60).toString().padStart(2, '0');
+                const secs = (gpsSeconds % 60).toString().padStart(2, '0');
+                document.getElementById('liveGpsTimer').innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(gpsTimerInterval);
+            gpsTimerInterval = null;
+        }
+
+        // Mulai Merekam Lari dengan Geolocation GPS Browser
+        function startGpsRun() {
+            if (!("geolocation" in navigator)) {
+                showGpsAlert("Perangkat atau browser Anda tidak mendukung fitur Geolocation GPS.");
+                return;
+            }
+
+            hideGpsAlert();
+            isGpsActive = true;
+            isGpsPaused = false;
+
+            // UI Adjustments
+            document.getElementById('btnStartGps').classList.add('hidden');
+            document.getElementById('btnPauseGps').classList.remove('hidden');
+            document.getElementById('btnStopGps').classList.remove('hidden');
+            
+            const pulse = document.getElementById('gpsPulse');
+            pulse.className = "w-2.5 h-2.5 rounded-full bg-sport-accent animate-pulse";
+            document.getElementById('gpsStatusText').innerText = "Merekam Lari...";
+
+            startTimer();
+
+            // Memulai stream penjelajahan lokasi pengguna
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+
+                    document.getElementById('gpsAccuracyText').innerText = `Presisi: ±${Math.round(accuracy)}m`;
+
+                    // Toleransi presisi lokasi (>35m diabaikan)
+                    if (accuracy > 35) return;
+
+                    if (lastLat !== null && lastLon !== null && !isGpsPaused) {
+                        const delta = calculateDistance(lastLat, lastLon, lat, lon);
+                        // Abaikan noise GPS di bawah 3 meter
+                        if (delta > 0.003) {
+                            gpsDistance += delta;
+                            document.getElementById('liveGpsDistance').innerText = gpsDistance.toFixed(2);
+                        }
+                    }
+
+                    lastLat = lat;
+                    lastLon = lon;
+                },
+                (error) => {
+                    let msg = "Gagal mengakses GPS.";
+                    if (error.code === 1) msg = "Izin GPS ditolak. Harap izinkan akses lokasi di browser HP Anda.";
+                    else if (error.code === 2) msg = "Sinyal GPS tidak ditemukan.";
+                    showGpsAlert(msg);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        function pauseGpsRun() {
+            const btnPause = document.getElementById('btnPauseGps');
+            const pulse = document.getElementById('gpsPulse');
+            const statusText = document.getElementById('gpsStatusText');
+
+            if (!isGpsPaused) {
+                isGpsPaused = true;
+                stopTimer();
+                btnPause.innerText = "Lanjut";
+                btnPause.classList.replace('bg-amber-500', 'bg-sport-accent');
+                pulse.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
+                statusText.innerText = "Lari Dijeda";
+            } else {
+                isGpsPaused = false;
+                startTimer();
+                btnPause.innerText = "Jeda";
+                btnPause.classList.replace('bg-sport-accent', 'bg-amber-500');
+                pulse.className = "w-2.5 h-2.5 rounded-full bg-sport-accent animate-pulse";
+                statusText.innerText = "Merekam Lari...";
+            }
+        }
+
+        function stopGpsRun() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            stopTimer();
+
+            if (gpsDistance > 0.01) {
+                runData.push({
+                    id: Date.now(),
+                    distance: parseFloat(gpsDistance.toFixed(2)),
+                    date: new Date()
+                });
+                updateDashboard();
+            } else {
+                showGpsAlert("Jarak tempuh terlalu pendek untuk disimpan.");
+            }
+
+            // Reset GPS state & UI
+            isGpsActive = false;
+            isGpsPaused = false;
+            gpsDistance = 0.0;
+            gpsSeconds = 0;
+            lastLat = null;
+            lastLon = null;
+
+            document.getElementById('liveGpsDistance').innerText = "0.00";
+            document.getElementById('liveGpsTimer').innerText = "00:00";
+            document.getElementById('btnStartGps').classList.remove('hidden');
+            document.getElementById('btnPauseGps').classList.add('hidden');
+            document.getElementById('btnStopGps').classList.add('hidden');
+            document.getElementById('gpsPulse').className = "w-2.5 h-2.5 rounded-full bg-gray-500";
+            document.getElementById('gpsStatusText').innerText = "GPS Standby";
+            document.getElementById('gpsAccuracyText').innerText = "Presisi: -";
+        }
+
+        function showGpsAlert(message) {
+            const alertBox = document.getElementById('gpsAlert');
+            alertBox.innerText = message;
+            alertBox.classList.remove('hidden');
+        }
+
+        function hideGpsAlert() {
+            const alertBox = document.getElementById('gpsAlert');
+            alertBox.classList.add('hidden');
+        }
+
+        function formatDate(date) {
+            const options = { weekday: 'short', day: 'numeric', month: 'short' };
+            return date.toLocaleDateString('id-ID', options);
+        }
+
+        // Generator Menu Latihan berdasarkan Performa Riwayat
+        function updateTrainingMenus(avgDistance) {
+            const container = document.getElementById('trainingMenuContainer');
+            if (!container) return;
+
+            const baseDist = avgDistance > 0 ? avgDistance : 3.0;
+            const recoveryTarget = (baseDist * 0.6).toFixed(1);
+            const intervalTarget = (baseDist * 0.8).toFixed(1);
+            const longRunTarget = (baseDist * 1.4).toFixed(1);
+
+            const menus = [
+                {
+                    title: "Lari Pemulihan (Recovery Run)",
+                    tag: "Santai",
+                    color: "border-blue-500/30 bg-blue-500/5",
+                    badgeColor: "bg-blue-500/20 text-blue-300",
+                    target: recoveryTarget,
+                    desc: "Menjaga ritme jantung ringan untuk regenerasi otot."
+                },
+                {
+                    title: "Latihan Kecepatan (Interval)",
+                    tag: "Intensif",
+                    color: "border-amber-500/30 bg-amber-500/5",
+                    badgeColor: "bg-amber-500/20 text-amber-300",
+                    target: intervalTarget,
+                    desc: "Kombinasi lari cepat 1 menit & jalan santai 1 menit."
+                },
+                {
+                    title: "Lari Jarak Jauh (Long Run)",
+                    tag: "Endurance",
+                    color: "border-emerald-500/30 bg-emerald-500/5",
+                    badgeColor: "bg-emerald-500/20 text-emerald-300",
+                    target: longRunTarget,
+                    desc: "Meningkatkan daya tahan tubuh dan stamina paru-paru."
+                }
+            ];
+
+            container.innerHTML = menus.map(m => `
+                <div class="p-3 rounded-xl border ${m.color} flex justify-between items-center transition-all hover:border-slate-500">
+                    <div class="pr-2">
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <span class="font-semibold text-xs text-white">${m.title}</span>
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${m.badgeColor}">${m.tag}</span>
+                        </div>
+                        <p class="text-[10px] text-gray-400 line-clamp-1">${m.desc}</p>
+                    </div>
+                    <button onclick="selectMenuTarget(${m.target})" class="shrink-0 bg-slate-800 hover:bg-sport-accent hover:text-slate-900 border border-slate-700 text-sport-accent px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1">
+                        ${m.target} KM <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function selectMenuTarget(targetKm) {
+            switchMode('gps');
+            showGpsAlert(`🎯 Target Menu Latihan: ${targetKm} KM. Klik "Mulai Lari" ketika siap!`);
+            window.scrollTo({ top: 180, behavior: 'smooth' });
+        }
+
+        // Fitur AI Runner Coach menggunakan Gemini API
+        async function generateAiPlan() {
+            const planBox = document.getElementById('aiPlanBox');
+            const planContent = document.getElementById('aiPlanContent');
+            
+            planBox.classList.remove('hidden');
+            planContent.innerHTML = `<p class="animate-pulse text-emerald-400 flex items-center gap-2"><i data-lucide="loader" class="w-4 h-4 animate-spin"></i> AI sedang menganalisis ${runData.length} sesi lari terakhir Anda...</p>`;
+            lucide.createIcons();
+
+            const totalDistance = runData.reduce((sum, run) => sum + run.distance, 0);
+            const avgDistance = runData.length ? (totalDistance / runData.length).toFixed(1) : 0;
+
+            const userPrompt = `Saya seorang pelari. Riwayat lari saya: Total Lari ${runData.length} kali, Total Jarak ${totalDistance.toFixed(1)} KM, Rata-rata ${avgDistance} KM per lari. Buatkan saran program latihan 3 hari ke depan yang singkat, sangat jelas, motivatif, dan terstruktur. Gunakan format poin-poin sederhana. Bahasa Indonesia.`;
+
+            // Implementasi API Call dengan Backoff Handling
+            let delay = 1000;
+            const maxRetries = 3;
+
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    const apiKey = ""; // Kunci API disediakan otomatis oleh environment runtime
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: userPrompt }] }],
+                            systemInstruction: { parts: [{ text: "Anda adalah pelatih lari marathon profesional yang ramah, ringkas, dan fokus pada pencegahan cedera serta peningkatan stamina secara bertahap." }] }
+                        })
+                    });
+
+                    if (!response.ok) throw new Error("HTTP Status " + response.status);
+
+                    const result = await response.json();
+                    const aiText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (aiText) {
+                        const formattedText = aiText
+                            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
+                            .replace(/\n/g, '<br>');
+                        
+                        planContent.innerHTML = `<div class="space-y-1 text-[11px] leading-relaxed">${formattedText}</div>`;
+                        return;
+                    }
+                } catch (error) {
+                    if (attempt === maxRetries - 1) {
+                        planContent.innerText = "Gagal terhubung dengan AI Coach. Silakan periksa koneksi internet Anda.";
+                    } else {
+                        await new Promise(res => setTimeout(res, delay));
+                        delay *= 2;
+                    }
+                }
+            }
+        }
+
+        // Update statistik dashboard & tampilan UI
+        function updateDashboard() {
+            const totalRuns = runData.length;
+            const totalDistance = runData.reduce((sum, run) => sum + run.distance, 0);
+            const avgDistance = totalRuns === 0 ? 0 : totalDistance / totalRuns;
+
+            document.getElementById('totalDistance').innerText = totalDistance.toFixed(1);
+            document.getElementById('totalRuns').innerText = totalRuns;
+            document.getElementById('avgDistance').innerText = avgDistance.toFixed(1);
+
+            updateTrainingMenus(avgDistance);
+
+            const historyContainer = document.getElementById('historyList');
+            historyContainer.innerHTML = '';
+            
+            const sortedRuns = [...runData].sort((a, b) => b.date - a.date);
+
+            if (sortedRuns.length === 0) {
+                historyContainer.innerHTML = `<p class="text-gray-500 text-sm text-center py-4 italic">Belum ada aktivitas. Yuk mulai lari!</p>`;
+            }
+
+            sortedRuns.forEach(run => {
+                const item = document.createElement('div');
+                item.className = 'bg-sport-card border border-slate-700 rounded-xl p-3.5 flex items-center justify-between hover:border-slate-600 transition-colors';
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-sport-accent">
+                            <i data-lucide="footprints" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-xs text-white">Sesi Lari</p>
+                            <p class="text-[10px] text-gray-400">${formatDate(run.date)}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-base text-sport-accent">${run.distance.toFixed(2)}</p>
+                        <p class="text-[9px] text-gray-400">KM</p>
+                    </div>
+                `;
+                historyContainer.appendChild(item);
+            });
+
+            lucide.createIcons();
+            updateChart();
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            const recentRuns = [...runData].sort((a, b) => a.date - b.date).slice(-5);
+            const labels = recentRuns.map(run => formatDate(run.date));
+            const dataPoints = recentRuns.map(run => run.distance);
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            let gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+            gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length > 0 ? labels : ['Belum ada data'],
+                    datasets: [{
+                        label: 'Jarak (KM)',
+                        data: dataPoints.length > 0 ? dataPoints : [0],
+                        borderColor: '#10b981',
+                        backgroundColor: gradient,
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#0f172a',
+                        pointBorderColor: '#10b981',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        fill: true,
+                        tension: 0.35
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleColor: '#fff',
+                            bodyColor: '#10b981',
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) { return context.parsed.y + ' KM'; }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: { color: '#64748b', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: '#334155', borderDash: [4, 4], drawBorder: false },
+                            ticks: { color: '#64748b', font: { size: 10 }, beginAtZero: true }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Submit Input Manual
+        document.getElementById('runForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const inputField = document.getElementById('distanceInput');
+            const distance = parseFloat(inputField.value);
+
+            if (distance && distance > 0) {
+                runData.push({
+                    id: Date.now(),
+                    distance: distance,
+                    date: new Date()
+                });
+
+                inputField.value = '';
+                updateDashboard();
+
+                const btn = e.target.querySelector('button');
+                const originalText = btn.innerText;
+                btn.innerText = 'OK!';
+                setTimeout(() => { btn.innerText = originalText; }, 1000);
+            }
+        });
+
+        // Inisialisasi awal saat halaman dimuat
+        window.onload = () => {
+            updateDashboard();
+        };
+    </script>
+</body>
+</html>
